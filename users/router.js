@@ -5,7 +5,30 @@ const { getUserPosts } = require('../data/helpers/postDb');
 
 const router = express.Router();
 
-// handles urls beginning with /api/users
+// middleware
+const ensureUppercase = (req, res, next) => {
+  try {
+    const name = req.body.name;
+    const firstLetter = name[0];
+    if(!firstLetter) {
+      // let this one go through, the route will catch it
+      return next();
+    }
+
+    if (firstLetter.toUpperCase() === firstLetter) {
+      next();
+    } else {
+      res.status(400).json({ message: 'Username must be capitalized.' });
+    }
+  } catch (err) {
+    res
+      .status(500)
+      .json({
+        errorMessage: 'There was an error processing this request',
+        err
+      });
+  }
+};
 
 router.get('/', async (req, res) => {
   try {
@@ -40,11 +63,11 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-router.user('/', async (req, res) => {
+router.post('/', ensureUppercase, async (req, res) => {
   try {
-    if (!req.body.user_id || !req.body.text) {
+    if (!req.body.name) {
       return res.status(400).json({
-        errorMessage: 'Please provide a user_id and text value for user'
+        errorMessage: 'Please provide a name'
       });
     }
     const user = await Users.insert(req.body);
@@ -57,13 +80,11 @@ router.user('/', async (req, res) => {
   }
 });
 
-router.put('/:id', async (req, res) => {
-  if (!req.body.user_id || !req.body.text) {
-    return res
-      .status(400)
-      .json({
-        errorMessage: 'Please provide user_id and text for the user.'
-      });
+router.put('/:id', ensureUppercase, async (req, res) => {
+  if (!req.body.name) {
+    return res.status(400).json({
+      errorMessage: 'Please provide a name'
+    });
   }
   try {
     const user = await Users.update(req.params.id, req.body);
