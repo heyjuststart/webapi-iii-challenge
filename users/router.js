@@ -1,7 +1,6 @@
 const express = require('express');
 
 const Users = require('../data/helpers/userDb');
-const { getUserPosts } = require('../data/helpers/postDb');
 
 const router = express.Router();
 
@@ -9,24 +8,20 @@ const router = express.Router();
 const ensureUppercase = (req, res, next) => {
   try {
     const name = req.body.name;
-    const firstLetter = name[0];
-    if(!firstLetter) {
-      // let this one go through, the route will catch it
-      return next();
+    if (!name) {
+      return res.status(400).json({ message: 'Name required for this request' });
     }
-
+    const firstLetter = name[0];
     if (firstLetter.toUpperCase() === firstLetter) {
       next();
     } else {
-      res.status(400).json({ message: 'Username must be capitalized.' });
+      res.status(400).json({ message: 'Name must be capitalized.' });
     }
   } catch (err) {
-    res
-      .status(500)
-      .json({
-        errorMessage: 'There was an error processing this request',
-        err
-      });
+    res.status(500).json({
+      errorMessage: 'There was an error processing this request',
+      err
+    });
   }
 };
 
@@ -88,9 +83,8 @@ router.put('/:id', ensureUppercase, async (req, res) => {
   }
   try {
     const user = await Users.update(req.params.id, req.body);
-    console.log(user);
     if (user) {
-      const updatedUser = (await Users.findById(req.params.id))[0];
+      const updatedUser = await Users.getById(req.params.id);
       res.status(200).json(updatedUser);
     } else {
       res
@@ -108,7 +102,7 @@ router.put('/:id', ensureUppercase, async (req, res) => {
 
 router.delete('/:id', async (req, res) => {
   try {
-    const maybeUser = (await Users.findById(req.params.id))[0];
+    const maybeUser = await Users.getById(req.params.id);
     if (maybeUser) {
       await Users.remove(req.params.id);
       return res.status(200).json(maybeUser);
@@ -128,7 +122,7 @@ router.delete('/:id', async (req, res) => {
 
 router.get('/:id/posts', async (req, res) => {
   try {
-    const posts = await getUserPosts(req.params.id);
+    const posts = await Users.getUserPosts(req.params.id);
 
     if (posts) {
       res.status(200).json(posts);

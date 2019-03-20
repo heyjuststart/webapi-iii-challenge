@@ -66,9 +66,8 @@ router.put('/:id', async (req, res) => {
   }
   try {
     const post = await Posts.update(req.params.id, req.body);
-    console.log(post);
     if (post) {
-      const updatedPost = (await Posts.findById(req.params.id))[0];
+      const updatedPost = await Posts.getById(req.params.id);
       res.status(200).json(updatedPost);
     } else {
       res
@@ -86,7 +85,7 @@ router.put('/:id', async (req, res) => {
 
 router.delete('/:id', async (req, res) => {
   try {
-    const maybePost = (await Posts.findById(req.params.id))[0];
+    const maybePost = await Posts.getById(req.params.id);
     if (maybePost) {
       await Posts.remove(req.params.id);
       return res.status(200).json(maybePost);
